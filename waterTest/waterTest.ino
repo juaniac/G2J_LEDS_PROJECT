@@ -39,8 +39,6 @@ void loop(){
 }
 
 void setupLEDS(){
-  pathWaterLevel[0].pos = 10;
-  pathWaterLevel[1].pos = 201 - 10;
 }
 
 void updateLEDS1(){

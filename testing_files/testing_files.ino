@@ -13,19 +13,21 @@ void setup() {
     FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
     //FastLED.setBrightness(BRIGHTNESS);
     Serial.begin(9600);
-    
 }
 
 
 void loop(){   
   //estimatePoints();
-  int points[] = {0, 44, 45, 66, 86, 91, 101, 102, 111, 116, 137, 157, 158, 201};
-  testSomePoints(sizeof(points), points);
+  //int points[] = {0, 44, 45, 66, 86, 91, 101, 102, 111, 116, 137, 157, 158, 201};
+  //testSomePoints(sizeof(points), points);
+  //testHues();
   //pathTest();
   //firstLightTest();
   //lastLightTest();
   //testBrightness();
   //pride(leds, 0, 202);
+  uint16_t var = millis();
+  Serial.println(var);
 
   FastLED.show();
   FastLED.delay(1000 / UPDATES_PER_SECOND);
@@ -69,4 +71,9 @@ void testBrightness(){
   }
 }
 
+void testHues(){
+  for(int i = 0; i < NUM_LEDS; i++){
+    leds[i].setHSV((i*4)%256,255,255);
+  }
+}
 
