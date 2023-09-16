@@ -6,23 +6,29 @@
 #define nbLeds    202
 
 #define BRIGHTNESS  100
-#define FRAMES_PER_SECOND 60
 
 CRGB leds[nbLeds];
 
+typedef uint8_t CentiMeter;
+typedef uint16_t MilliMeter;
+typedef uint16_t LedIndex;
+typedef uint16_t MilliSecond;
+typedef uint16_t MilliMeterPerSecond;
+
+#define CMtoMM(cm) ((cm)*10) 
+
 #define nbSegments 10
 struct Segment{
-  uint16_t start;
-  uint16_t end;
+  LedIndex start;
+  LedIndex end;
   int dir;
 };
 struct SegmentHeights{
-  uint8_t lowHeight;
-  uint8_t highHeight;
+  CentiMeter lowHeight;
+  CentiMeter highHeight;
 };
-const Segment segments[]  = {{0, 44, 1}, {44, 66, -1}, {66, 86, 1}, {86, 91, -1},{91, 101, 1},{102, 111, -1}, {111, 116, 1},{116, 136, -1},{136, 157, 1},{158, 201, -1}};
-const SegmentHeights sgh[] = {{0, 56}, {27, 56}, {27, 54},{48, 54},{48, 63}, {48, 63} ,{48, 54}, {27, 54}, {27, 56}, {0, 56}};
-uint8_t displacements[nbSegments]; 
+const Segment segments[]  = {{0, 44, 1}, {44, 66, -1}, {66, 86, 1}, {86, 91, -1}, {91, 101, 1},{102, 111, -1}, {111, 116, 1}, {116, 136, -1}, {136, 157, 1}, {158, 201, -1}};
+const SegmentHeights sgh[] = {{0, 56}, {27, 56}, {27, 54}, {48, 54}, {48, 63}, {48, 63} ,{48, 54}, {27, 54}, {27, 56}, {0, 56}};
 
 struct HSV{
   uint8_t hue;
@@ -30,17 +36,28 @@ struct HSV{
 };
 HSV ledsHSV[nbLeds];
 
+MilliMeter waterHeight = 0;
+MilliSecond previousWaterUpdateTime;
+MilliMeterPerSecond waterSpeed = 80;
+
 void setup() {
   delay(3000); // sanity delay
   FastLED.addLeds<CHIPSET, LED_PIN, COLOR_ORDER>(leds, nbLeds).setCorrection( TypicalLEDStrip );
   FastLED.setBrightness( BRIGHTNESS );
   Serial.begin(9600);
+
+  previousWaterUpdateTime = millis();
+  
+  for(size_t i = 0; i < nbLeds; i++){
+    leds[i].setRGB(0,0,0);
+  }
+  FastLED.show();
+  delay(3000);
 }
 
 void loop(){
   update();
   FastLED.show(); // display this frame
-  FastLED.delay(1000 / FRAMES_PER_SECOND);
 }
 
 /**
@@ -53,11 +70,8 @@ void mask8bitsSet(uint16_t i, uint8_t val){
 }
 */
 
-#define scaleUpHeights 5
-uint16_t waterHeight = 0;
-
 void update(){ 
-  if(waterHeight > 63*scaleUpHeights +1){return;}
+  if(waterHeight > CMtoMM(63)){return;}
 
   for(size_t i = 0; i < nbLeds; i++){
     ledsHSV[i] = {150, 255};
@@ -65,35 +79,35 @@ void update(){
 
   for (size_t i = 0; i < nbSegments; i++){
     int dir = segments[i].dir;
-    uint16_t start = segments[i].start;
-    uint16_t end = segments[i].end;
+    LedIndex start = segments[i].start;
+    LedIndex end = segments[i].end;
 
-    uint16_t lowHeight = scaleUpHeights*sgh[i].lowHeight;
-    uint16_t highHeight = scaleUpHeights*sgh[i].highHeight;
+    MilliMeter lowHeight = CMtoMM(sgh[i].lowHeight);
+    MilliMeter highHeight = CMtoMM(sgh[i].highHeight);
   
-    int rand = newRandom(i);
-    int curWaterHeight = max(0, waterHeight + rand);
+    int rand = beatsin16(90, 0, 40, 0, (i%4)*65535/4) - 20;
+    Serial.println(rand);
+    MilliMeter curWaterHeight = max(0, int(waterHeight + rand));
 
     if(lowHeight <= curWaterHeight && curWaterHeight < highHeight){
 
-      uint16_t newPos = map(curWaterHeight, lowHeight, highHeight, dir == 1 ? start : end, dir == 1 ? end : start);
+      LedIndex newPos = map(curWaterHeight, lowHeight, highHeight, dir == 1 ? start : end, dir == 1 ? end : start);
 
       uint8_t bri = dir == 1 ? 255 : 0;
-      for(uint16_t j = start; j < newPos; j++){
+      for(LedIndex j = start; j < newPos; j++){
         leds[j].setHSV(ledsHSV[j].hue, ledsHSV[j].sat, bri);
       }
 
-      uint16_t total = mapScale(curWaterHeight, lowHeight, highHeight, start, end, 10);
-      
-      leds[newPos].setHSV(ledsHSV[newPos].hue, ledsHSV[newPos].sat, ((int)(total) % 10)*255/10);
+      uint16_t afterTheDecimalPoint = mapScale(curWaterHeight, lowHeight, highHeight, start, end, 10) % 10;
+      leds[newPos].setHSV(ledsHSV[newPos].hue, ledsHSV[newPos].sat, afterTheDecimalPoint*255/10);
 
       bri = dir == 1 ? 0 : 255;
-      for(uint16_t j = newPos + 1; j <= end; j++){
+      for(LedIndex j = newPos + 1; j <= end; j++){
         leds[j].setHSV(ledsHSV[j].hue, ledsHSV[j].sat, bri);
       }
     }else{
       uint8_t bri = curWaterHeight < lowHeight ? 0 : 255;
-      for(uint16_t j = start; j <= end; j++){
+      for(LedIndex j = start; j <= end; j++){
         leds[j].setHSV(ledsHSV[j].hue, ledsHSV[j].sat, bri);
       }
     }
@@ -107,54 +121,19 @@ void update(){
         }
         finished = true;
 */
-  waterHeight += 1;
-}
-
-int newRandom(uint16_t index){
-  uint8_t curDisBrute = displacements[index];
-  uint8_t msb = curDisBrute >> 7;
-  uint8_t rest = curDisBrute & 0b01111111;
-  int newDis;
-  if(rest == 0){
-    newDis = random(0, 0*scaleUpHeights + 1);
-    displacements[index] = (newDis < 0 ? (1 << 7) : 0) | (newDis & 0b01111111);
-  }else{
-    rest = rest > 2 ? rest - 2 : 0 ;    
-    newDis = (msb == 1 ? -1 : 1)*rest;
-    displacements[index] = (msb << 7) | rest;
-  }
-  if(index ==0) Serial.println(newDis);
-  return newDis;
+  updateWaterHeight();
 }
 
 long mapScale(long x, long in_min, long in_max, long out_min, long out_max, long scale) {
   return (x - in_min) * (out_max - out_min) * scale / (in_max - in_min) + out_min * scale;
 }
 
-
-
-/**
-uint8_t sinCounter = 0;
-bool sinUp = true;
-#define nbValues 7
-int sinWaveVals[] = {-2,-1,-1,0,1,1,2};
-int sudoSinWave(){
-  int ret = sinWaveVals[sinCounter];
-  if(sinUp){
-    if(sinCounter < (nbValues - 1)){
-      sinCounter += 1;
-    }else{
-      sinCounter -= 1;
-      sinUp = false;
-    }
-  }else{
-    if(sinCounter > 0){
-      sinCounter -= 1;
-    }else{
-    sinCounter += 1;
-    sinUp = true;
-    }
+void updateWaterHeight(){
+  MilliMeter waterAmount = 0;
+  while(waterAmount == 0){
+    MilliSecond deltaTime = millis() - previousWaterUpdateTime;
+    waterAmount = (waterSpeed*deltaTime)/1000;
   }
-  return ret;
+  previousWaterUpdateTime = millis();
+  waterHeight += waterAmount;
 }
-*/

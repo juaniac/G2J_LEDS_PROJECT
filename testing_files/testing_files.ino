@@ -13,6 +13,7 @@ void setup() {
     FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
     //FastLED.setBrightness(BRIGHTNESS);
     Serial.begin(9600);
+
 }
 
 
@@ -26,8 +27,10 @@ void loop(){
   //lastLightTest();
   //testBrightness();
   //pride(leds, 0, 202);
-  uint16_t var = millis();
-  Serial.println(var);
+  Serial.print((int)(beatsin16(30, 0, 4, 0, 0) - 2));
+  Serial.print("  ");
+  Serial.println((int)(beatsin16(30, 0, 4, 0, 65535/2) - 2));
+
 
   FastLED.show();
   FastLED.delay(1000 / UPDATES_PER_SECOND);
@@ -77,3 +80,13 @@ void testHues(){
   }
 }
 
+//STOLEN STUFF FROM FASTLED ANNEX LIBRARY
+int sudoSinus(accum88 beats_per_minute, uint16_t lowest = 0, uint16_t highest = 65535,
+                               uint32_t timebase = 0, uint16_t phase_offset = 0){
+  if( beats_per_minute < 256) beats_per_minute <<= 8;
+  uint16_t beat = (((GET_MILLIS()) - timebase) * beats_per_minute * 280) >> 16;
+  uint16_t beatsin = (sin16( beat + phase_offset) + 32768);
+  uint16_t rangewidth = highest - lowest;
+  uint16_t scaledbeat = scale16( beatsin, rangewidth);
+  uint16_t result = lowest + scaledbeat;
+}
