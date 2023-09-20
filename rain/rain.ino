@@ -28,7 +28,7 @@ struct SegmentHeights{
   CentiMeter highHeight;
 };
 const Segment segments[]  = {{0, 44, 1}, {44, 66, -1}, {66, 86, 1}, {86, 91, -1}, {91, 101, 1},{102, 111, -1}, {111, 116, 1}, {116, 136, -1}, {136, 157, 1}, {158, 201, -1}};
-const SegmentHeights sgh[] = {{0, 56}, {27, 56}, {27, 54}, {48, 54}, {48, 63}, {48, 63} ,{48, 54}, {27, 54}, {27, 56}, {0, 56}};
+const SegmentHeights segmentHeights[] = {{0, 56}, {27, 56}, {27, 54}, {48, 54}, {48, 63}, {48, 63} ,{48, 54}, {27, 54}, {27, 56}, {0, 56}};
 
 struct HSV{
   uint8_t hue;
@@ -36,9 +36,22 @@ struct HSV{
 };
 HSV ledsHSV[nbLeds];
 
+struct Bubble{
+  MilliMeter height;
+  MilliMeterPerSecond speed;
+  uint8_t segmentId;
+};
+#define maxBubbles 10
+Bubble* bubbles[maxBubbles];
+#define createBubbleRate 100
+#define initialBubbleSpeed (3*waterSpeed)
+#define BubbleLength 30
+MilliSecond previousCreatedBubbleTime;
+
 MilliMeter waterHeight = 0;
 MilliSecond previousWaterUpdateTime;
 MilliMeterPerSecond waterSpeed = 80;
+#define maxWaveHeight 20
 
 void setup() {
   delay(3000); // sanity delay
@@ -46,13 +59,14 @@ void setup() {
   FastLED.setBrightness( BRIGHTNESS );
   Serial.begin(9600);
 
-  previousWaterUpdateTime = millis();
-  
   for(size_t i = 0; i < nbLeds; i++){
     leds[i].setRGB(0,0,0);
   }
   FastLED.show();
   delay(3000);
+
+  previousWaterUpdateTime = millis();
+  previousCreatedBubbleTime = millis();
 }
 
 void loop(){
@@ -71,7 +85,7 @@ void mask8bitsSet(uint16_t i, uint8_t val){
 */
 
 void update(){ 
-  if(waterHeight > CMtoMM(63)){return;}
+  if(waterHeight > CMtoMM(63) + maxWaveHeight){return;}
 
   for(size_t i = 0; i < nbLeds; i++){
     ledsHSV[i] = {150, 255};
@@ -82,25 +96,60 @@ void update(){
     LedIndex start = segments[i].start;
     LedIndex end = segments[i].end;
 
-    MilliMeter lowHeight = CMtoMM(sgh[i].lowHeight);
-    MilliMeter highHeight = CMtoMM(sgh[i].highHeight);
+    MilliMeter lowHeight = CMtoMM(segmentHeights[i].lowHeight);
+    MilliMeter highHeight = CMtoMM(segmentHeights[i].highHeight);
   
-    int rand = beatsin16(90, 0, 40, 0, (i%4)*65535/4) - 20;
-    Serial.println(rand);
-    MilliMeter curWaterHeight = max(0, int(waterHeight + rand));
+    int waveHeight = beatsin16(90, 0, 2*maxWaveHeight, 0, (i%4)*65535/4) - maxWaveHeight; 
+    MilliMeter curWaterHeight = max(0, int(waterHeight + waveHeight));
+
+   
+    for(size_t j = 0; j < maxBubbles; j++){
+      Bubble* bubble = bubbles[j];
+      if(bubble != NULL && bubble->segmentId == i){
+        MilliMeter bubbleHeight = bubble->height;
+
+        if(bubbleHeight > highHeight || bubbleHeight > curWaterHeight){
+          free(bubble);
+          bubbles[j] = NULL;
+          Serial.println("delete Bubble");
+        }else{
+          
+          bubbleHeight = max(0, int(bubbleHeight + beatsin16(90, 0, 2*10) - 10));
+
+          LedIndex bottomIndexTimes10 = constrain(mapScale(bubbleHeight, lowHeight, highHeight, dir == 1 ? start : end, dir == 1 ? end : start, 10), start*10, end*10);
+          LedIndex bottomIndex = bottomIndexTimes10/10;
+          LedIndex topIndexTimes10 = constrain(mapScale(bubbleHeight + BubbleLength, lowHeight, highHeight, dir == 1 ? start : end, dir == 1 ? end : start, 10), start*10, end*10);
+          LedIndex topIndex = topIndexTimes10/10;
+
+          uint8_t topAfterTheDecimalPoint = dir == 1 ? (10 - (topIndexTimes10 % 10)) : (topIndexTimes10 % 10) ;
+          //leds[topIndex].setHSV(ledsHSV[topIndex].hue, topAfterTheDecimalPoint*255/10, 255);
+          ledsHSV[topIndex].sat = topAfterTheDecimalPoint*255/10;
+
+          uint8_t bottomAfterTheDecimalPoint = dir == 1 ? (bottomIndexTimes10 % 10) : (10 - (bottomIndexTimes10 % 10)) ;
+          //leds[bottomIndex].setHSV(ledsHSV[bottomIndex].hue, bottomAfterTheDecimalPoint*255/10, 255);
+          ledsHSV[bottomIndex].sat = bottomAfterTheDecimalPoint*255/10;
+
+          for(LedIndex k = bottomIndex + dir; dir == 1 ? k < topIndex : k > topIndex; k+= dir){
+            //leds[k].setHSV(ledsHSV[k].hue, 0, 255);
+            ledsHSV[k].sat = 0;
+          }             
+        } 
+      }
+    }
 
     if(lowHeight <= curWaterHeight && curWaterHeight < highHeight){
-
-      LedIndex newPos = map(curWaterHeight, lowHeight, highHeight, dir == 1 ? start : end, dir == 1 ? end : start);
+      
+      LedIndex newPosTimes10 = mapScale(curWaterHeight, lowHeight, highHeight, dir == 1 ? start : end, dir == 1 ? end : start, 10);
+      LedIndex newPos = newPosTimes10/10;
 
       uint8_t bri = dir == 1 ? 255 : 0;
       for(LedIndex j = start; j < newPos; j++){
         leds[j].setHSV(ledsHSV[j].hue, ledsHSV[j].sat, bri);
       }
-
-      uint16_t afterTheDecimalPoint = mapScale(curWaterHeight, lowHeight, highHeight, start, end, 10) % 10;
+      
+      uint8_t afterTheDecimalPoint = dir == 1 ? (newPosTimes10 % 10) : (10 - (newPosTimes10 % 10)) ;
       leds[newPos].setHSV(ledsHSV[newPos].hue, ledsHSV[newPos].sat, afterTheDecimalPoint*255/10);
-
+      
       bri = dir == 1 ? 0 : 255;
       for(LedIndex j = newPos + 1; j <= end; j++){
         leds[j].setHSV(ledsHSV[j].hue, ledsHSV[j].sat, bri);
@@ -121,19 +170,39 @@ void update(){
         }
         finished = true;
 */
-  updateWaterHeight();
+  updateHeights();
 }
 
 long mapScale(long x, long in_min, long in_max, long out_min, long out_max, long scale) {
   return (x - in_min) * (out_max - out_min) * scale / (in_max - in_min) + out_min * scale;
 }
 
-void updateWaterHeight(){
+void updateHeights(){
+
   MilliMeter waterAmount = 0;
+  MilliSecond deltaTime;
   while(waterAmount == 0){
-    MilliSecond deltaTime = millis() - previousWaterUpdateTime;
+    deltaTime = millis() - previousWaterUpdateTime;
     waterAmount = (waterSpeed*deltaTime)/1000;
   }
   previousWaterUpdateTime = millis();
   waterHeight += waterAmount;
+
+  for(size_t i = 0; i < maxBubbles; i++){
+    Bubble* bubble = bubbles[i];
+    if(bubble != NULL){
+      bubble->height += (bubble->speed*deltaTime)/1000;
+    }else if(millis() - previousCreatedBubbleTime > createBubbleRate){
+      while(bubble == NULL){bubble = calloc(1, sizeof(Bubble));}
+
+      bubble->segmentId = random16(0, nbSegments);
+      bubble->height = CMtoMM(segmentHeights[bubble->segmentId].lowHeight);
+      bubble->speed = initialBubbleSpeed;
+      bubbles[i] = bubble;
+
+      Serial.println("create Bubble");
+
+      previousCreatedBubbleTime = millis();
+    }
+  }
 }
