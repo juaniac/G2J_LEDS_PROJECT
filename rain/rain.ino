@@ -102,7 +102,7 @@ void update(){
     int waveHeight = beatsin16(90, 0, 2*maxWaveHeight, 0, (i%4)*65535/4) - maxWaveHeight; 
     MilliMeter curWaterHeight = max(0, int(waterHeight + waveHeight));
 
-   
+    
     for(size_t j = 0; j < maxBubbles; j++){
       Bubble* bubble = bubbles[j];
       if(bubble != NULL && bubble->segmentId == i){
@@ -111,7 +111,10 @@ void update(){
         if(bubbleHeight > highHeight || bubbleHeight > curWaterHeight){
           free(bubble);
           bubbles[j] = NULL;
-          Serial.println("delete Bubble");
+          Serial.print(j);
+          Serial.println(" delete Bubble");
+          Serial.println();
+          printBubbleArray();
         }else{
           
           bubbleHeight = max(0, int(bubbleHeight + beatsin16(90, 0, 2*10) - 10));
@@ -136,6 +139,7 @@ void update(){
         } 
       }
     }
+    
 
     if(lowHeight <= curWaterHeight && curWaterHeight < highHeight){
       
@@ -200,9 +204,26 @@ void updateHeights(){
       bubble->speed = initialBubbleSpeed;
       bubbles[i] = bubble;
 
-      Serial.println("create Bubble");
+      Serial.print(i);
+      Serial.println(" create Bubble");
+      Serial.println();
+      printBubbleArray();
+
 
       previousCreatedBubbleTime = millis();
     }
   }
+}
+
+void printBubbleArray(){
+  Serial.println("BUBBLE ARRAY:");
+  for(size_t i = 0; i < maxBubbles; i++){
+    Serial.print(i);
+    if(bubbles[i] == NULL){
+      Serial.println(" EMPTY");
+    }else{
+      Serial.println(" A BUBBLE");
+    }
+  }
+  Serial.println();
 }
