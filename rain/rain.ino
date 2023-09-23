@@ -34,7 +34,7 @@ struct HSV{
   uint8_t hue;
   uint8_t sat;
 };
-HSV ledsHSV[nbLeds];
+//HSV ledsHSV[nbLeds];
 
 struct Bubble{
   MilliMeter height;
@@ -87,9 +87,11 @@ void mask8bitsSet(uint16_t i, uint8_t val){
 void update(){ 
   if(waterHeight > CMtoMM(63) + maxWaveHeight){return;}
 
+  /*
   for(size_t i = 0; i < nbLeds; i++){
     ledsHSV[i] = {150, 255};
   }
+  */
 
   for (size_t i = 0; i < nbSegments; i++){
     int dir = segments[i].dir;
@@ -113,11 +115,10 @@ void update(){
           bubbles[j] = NULL;
           Serial.print(j);
           Serial.println(" delete Bubble");
-          Serial.println(bubbles[j] == NULL ? "BUBBLE NULL" : "BUBBLE NOT NULL");
           Serial.println();
           
           //printBubbleArray();
-        }else{
+        /*}else{
           
           bubbleHeight = max(0, int(bubbleHeight + beatsin16(90, 0, 2*10) - 10));
 
@@ -138,10 +139,11 @@ void update(){
             //leds[k].setHSV(ledsHSV[k].hue, 0, 255);
             ledsHSV[k].sat = 0;
           }             
+        */
         } 
       }
     }
-    
+    /**
 
     if(lowHeight <= curWaterHeight && curWaterHeight < highHeight){
       
@@ -166,6 +168,7 @@ void update(){
         leds[j].setHSV(ledsHSV[j].hue, ledsHSV[j].sat, bri);
       }
     }
+    */
   }
 /**
         uint8_t maxFusions = 4 + 2*incWater;
@@ -199,8 +202,6 @@ void updateHeights(){
     if(bubble != NULL){
       bubble->height += (bubble->speed*deltaTime)/1000;
     }else if(millis() - previousCreatedBubbleTime > createBubbleRate){
-      Serial.println(bubble == NULL ? "BUBBLE NULL" : "BUBBLE NOT NULL");
-
       while(bubble == NULL){bubble = calloc(1, sizeof(Bubble));}
 
       bubble->segmentId = random16(0, nbSegments);
@@ -218,6 +219,7 @@ void updateHeights(){
   }
 }
 
+/*
 void printBubbleArray(){
   Serial.println("BUBBLE ARRAY:");
   for(size_t i = 0; i < maxBubbles; i++){
@@ -229,4 +231,4 @@ void printBubbleArray(){
     }
   }
   Serial.println();
-}
+}*/
