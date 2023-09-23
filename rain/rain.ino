@@ -113,9 +113,9 @@ void update(){
         if(bubbleHeight > highHeight || bubbleHeight > curWaterHeight){
           free(bubble);
           bubbles[j] = NULL;
-          Serial.print(j);
-          Serial.println(" delete Bubble");
-          Serial.println();
+          //Serial.print(j);
+          //Serial.println(" delete Bubble");
+          //Serial.println();
           
           //printBubbleArray();
         /*}else{
@@ -209,9 +209,9 @@ void updateHeights(){
       bubble->speed = initialBubbleSpeed;
       bubbles[i] = bubble;
 
-      Serial.print(i);
-      Serial.println(" create Bubble");
-      Serial.println();
+      //Serial.print(i);
+      //Serial.println(" create Bubble");
+      //Serial.println();
       //printBubbleArray();
 
       previousCreatedBubbleTime = millis();
