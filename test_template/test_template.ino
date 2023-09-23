@@ -24,9 +24,9 @@ DATA* ptrData = NULL;
 
 void loop(){
   while(ptrData == NULL){ptrData = calloc(1, sizeof(DATA));}
-  dealy(5000);
+  delay(5000);
   free(ptrData);
   ptrData = NULL;
-  dealy(5000);
+  delay(5000);
   Serial.println("okay");
 } 
