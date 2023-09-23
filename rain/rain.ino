@@ -113,8 +113,10 @@ void update(){
           bubbles[j] = NULL;
           Serial.print(j);
           Serial.println(" delete Bubble");
+          Serial.println(bubbles[j] == NULL ? "BUBBLE NULL" : "BUBBLE NOT NULL");
           Serial.println();
-          printBubbleArray();
+          
+          //printBubbleArray();
         }else{
           
           bubbleHeight = max(0, int(bubbleHeight + beatsin16(90, 0, 2*10) - 10));
@@ -197,6 +199,8 @@ void updateHeights(){
     if(bubble != NULL){
       bubble->height += (bubble->speed*deltaTime)/1000;
     }else if(millis() - previousCreatedBubbleTime > createBubbleRate){
+      Serial.println(bubble == NULL ? "BUBBLE NULL" : "BUBBLE NOT NULL");
+
       while(bubble == NULL){bubble = calloc(1, sizeof(Bubble));}
 
       bubble->segmentId = random16(0, nbSegments);
@@ -207,8 +211,7 @@ void updateHeights(){
       Serial.print(i);
       Serial.println(" create Bubble");
       Serial.println();
-      printBubbleArray();
-
+      //printBubbleArray();
 
       previousCreatedBubbleTime = millis();
     }
