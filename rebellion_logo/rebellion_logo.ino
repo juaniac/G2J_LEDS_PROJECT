@@ -34,17 +34,29 @@ PAD pathAndDirections[] = {{0, 44, 1},{45, 66, -1},{66, 101, 1},{102, 136, -1},{
 
 int startPause = 0;
 
-#define UPDATES_PER_SECOND 240
+#define UPDATES_PER_SECOND 60
 
 void setup() {
     delay( 3000 ); // power-up safety delay
     FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, nbLeds).setCorrection( TypicalLEDStrip );
     FastLED.setBrightness(  BRIGHTNESS );
     Serial.begin(9600);
+
+    for(size_t i = 0; i < nbLeds; i++){
+      leds[i].setRGB(0,0,0);
+    }
+    FastLED.show();
+    delay(3000);
+    
+    uint16_t time = millis();
+   // fill_gradient_RGB(leds, nbLeds, CRGB::Black, CRGB::Red, CRGB::Yellow, CRGB::White);
+    Serial.print(time - millis());
 }
 
 void loop()
 {
+
+   //
     FireImproved();
     FastLED.show();
     FastLED.delay(1000 / UPDATES_PER_SECOND);
@@ -86,11 +98,12 @@ void FireImproved(){
 
 
         //start new fires at the starting points
-          for (size_t i = 0; i < nbStartingpoints; i++){
-              heat[startingPoints[i]] = random8(200, 255);
-          }
+        for (size_t i = 0; i < nbStartingpoints; i++){
+          heat[startingPoints[i]] = random8(100, 255);
+        }
 
         //map heat to color
+     
         for (size_t j = 0; j < nbLeds; j++)
         {
             uint8_t curHeat = heat[j];
@@ -105,6 +118,48 @@ void FireImproved(){
             //else if (curHeat <= 220) { leds[j].setHSV(interpolate0to60(curHeat, 171, 220), 255, 255); }
             //else { leds[j].setHSV(60, 255 - interpolate0to255(curHeat, 220, 255), 255); }
         }
+        /*
+        for (size_t i = 0; i < nbPathAndDirections; i++){
+            int dir = pathAndDirections[i].dir;
+            int start = dir == 1 ? pathAndDirections[i].start : pathAndDirections[i].end;
+            int end = dir == 1 ? pathAndDirections[i].end : pathAndDirections[i].start;
+
+            Serial.print(dir);
+
+            int lastIndex = start;
+            int curIndex = start;
+            while(curIndex != end & heat[curIndex] > 175){
+              curIndex += dir;
+            }if(lastIndex != start){
+              if(dir == 1){
+                fill_gradient_RGB(leds + lastIndex, curIndex - lastIndex, CRGB::White, CRGB::Yellow);
+              }else{
+                fill_gradient_RGB(leds + curIndex, lastIndex - curIndex, CRGB::Yellow, CRGB::White);
+              }
+            }
+            lastIndex = curIndex;
+            while(curIndex != end & heat[curIndex] > 75){
+              curIndex += dir;
+            }if(lastIndex != start){
+              if(dir == 1){
+                fill_gradient_RGB(leds + lastIndex, curIndex - lastIndex, CRGB::Yellow, CRGB::Red);
+              }else{
+                fill_gradient_RGB(leds + curIndex, lastIndex - curIndex, CRGB::Red, CRGB::Yellow);
+              }
+            }
+            lastIndex = curIndex;
+
+            while(curIndex != end & heat[curIndex] > 0){
+              curIndex += dir;
+            }if(lastIndex != start){
+              if(dir == 1){
+                fill_gradient_RGB(leds + lastIndex, curIndex - lastIndex, CRGB::Red, CRGB::Black);
+              }else{
+                fill_gradient_RGB(leds + curIndex, lastIndex - curIndex, CRGB::Black, CRGB::Red);
+              }
+            }
+        }
+        */
     }
 
     uint8_t interpolate0to255(uint8_t val, uint8_t min, uint8_t max){

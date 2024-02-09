@@ -34,23 +34,23 @@ struct HSV{
   uint8_t hue;
   uint8_t sat;
 };
-//HSV ledsHSV[nbLeds];
+HSV ledsHSV[nbLeds];
 
 struct Bubble{
   MilliMeter height;
   MilliMeterPerSecond speed;
   uint8_t segmentId;
 };
-#define maxBubbles 10
+#define maxBubbles 40
 Bubble* bubbles[maxBubbles];
-#define createBubbleRate 100
+#define createBubbleRate 50
 #define initialBubbleSpeed (3*waterSpeed)
-#define BubbleLength 30
+#define BubbleLength 20
 MilliSecond previousCreatedBubbleTime;
 
 MilliMeter waterHeight = 0;
 MilliSecond previousWaterUpdateTime;
-MilliMeterPerSecond waterSpeed = 80;
+MilliMeterPerSecond waterSpeed = 60;
 #define maxWaveHeight 20
 
 void setup() {
@@ -85,13 +85,10 @@ void mask8bitsSet(uint16_t i, uint8_t val){
 */
 
 void update(){ 
-  if(waterHeight > CMtoMM(63) + maxWaveHeight){return;}
 
-  /*
   for(size_t i = 0; i < nbLeds; i++){
     ledsHSV[i] = {150, 255};
   }
-  */
 
   for (size_t i = 0; i < nbSegments; i++){
     int dir = segments[i].dir;
@@ -101,7 +98,7 @@ void update(){
     MilliMeter lowHeight = CMtoMM(segmentHeights[i].lowHeight);
     MilliMeter highHeight = CMtoMM(segmentHeights[i].highHeight);
   
-    int waveHeight = beatsin16(90, 0, 2*maxWaveHeight, 0, (i%4)*65535/4) - maxWaveHeight; 
+    int waveHeight = beatsin16(45, 0, 2*maxWaveHeight, 0, (i%4)*65535/4) - maxWaveHeight; 
     MilliMeter curWaterHeight = max(0, int(waterHeight + waveHeight));
 
     
@@ -118,9 +115,9 @@ void update(){
           //Serial.println();
           
           //printBubbleArray();
-        /*}else{
+        }else{
           
-          bubbleHeight = max(0, int(bubbleHeight + beatsin16(90, 0, 2*10) - 10));
+          bubbleHeight = max(0, int(bubbleHeight + beatsin16(60, 0, 2*20, j*65535/(maxBubbles-1)) - 20));
 
           LedIndex bottomIndexTimes10 = constrain(mapScale(bubbleHeight, lowHeight, highHeight, dir == 1 ? start : end, dir == 1 ? end : start, 10), start*10, end*10);
           LedIndex bottomIndex = bottomIndexTimes10/10;
@@ -139,11 +136,9 @@ void update(){
             //leds[k].setHSV(ledsHSV[k].hue, 0, 255);
             ledsHSV[k].sat = 0;
           }             
-        */
         } 
       }
     }
-    /**
 
     if(lowHeight <= curWaterHeight && curWaterHeight < highHeight){
       
@@ -168,7 +163,6 @@ void update(){
         leds[j].setHSV(ledsHSV[j].hue, ledsHSV[j].sat, bri);
       }
     }
-    */
   }
 /**
         uint8_t maxFusions = 4 + 2*incWater;
@@ -195,7 +189,7 @@ void updateHeights(){
     waterAmount = (waterSpeed*deltaTime)/1000;
   }
   previousWaterUpdateTime = millis();
-  waterHeight += waterAmount;
+  waterHeight += (waterHeight > CMtoMM(63) + maxWaveHeight) ? 0 : waterAmount;
 
   for(size_t i = 0; i < maxBubbles; i++){
     Bubble* bubble = bubbles[i];
