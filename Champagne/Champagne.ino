@@ -8,10 +8,15 @@
 //{"id":4,"start":234,"stop":299,"grp":1,"spc":0,"of":0,"on":true,"frz":false,"bri":255,"cct":127,"set":0,"n":"Liquide","col":[[255,160,0],[255,200,0],[0,0,0]],"fx":110,"sx":216,"ix":213,"pal":3,"c1":128,"c2":128,"c3":16,"sel":false,"rev":false,"mi":false,"o1":false,"o2":false,"o3":false,"si":0,"m12":1},
 //{"id":5,"start":220,"stop":233,"grp":1,"spc":0,"of":0,"on":true,"frz":false,"bri":255,"cct":127,"set":0,"n":"Gouttes","col":[[255,170,0],[0,0,0],[0,0,0]],"fx":0,"sx":128,"ix":128,"pal":0,"c1":128,"c2":128,"c3":16,"sel":true,"rev":false,"mi":false,"o1":false,"o2":false,"o3":false,"si":0,"m12":0}]}
 
+#define RANDOM_FLUID 
+//#define SHINE_FLUID
+//#define STATIC_FLUID 
+
 #define Glass_LED_PIN     2
 #define Rest_LED_PIN      1
 #define COLOR_ORDER GRB
-#define CHIPSET     WS2812B
+#define Glass_CHIPSET     WS2812B
+#define Rest_CHIPSET     WS2812B
 #define BRIGHTNESS  100
 
 #define nbGlassLeds    66
@@ -56,10 +61,15 @@ MilliSecond previousWaterUpdateTime;
 MilliMeterPerSecond waterSpeed = 60;
 #define maxWaveHeight 20
 
+#ifdef SHINE_FLUID
+uint8_t curHue = lowHue;
+int curHueDir = 1;
+#endif 
+
 void setup() {
   delay(3000); // sanity delay
-  FastLED.addLeds<CHIPSET, Glass_LED_PIN, COLOR_ORDER>(glassLeds, nbGlassLeds).setCorrection( TypicalLEDStrip );
-  FastLED.addLeds<CHIPSET, Rest_LED_PIN, COLOR_ORDER>(restLeds, nbRestLeds).setCorrection( TypicalLEDStrip );
+  FastLED.addLeds<Glass_CHIPSET, Glass_LED_PIN, COLOR_ORDER>(glassLeds, nbGlassLeds).setCorrection( TypicalLEDStrip );
+  FastLED.addLeds<Rest_CHIPSET, Rest_LED_PIN, COLOR_ORDER>(restLeds, nbRestLeds).setCorrection( TypicalLEDStrip );
   FastLED.setBrightness( BRIGHTNESS );
   Serial.begin(9600);
 
@@ -115,13 +125,23 @@ void loop(){
     }
   }
   randUpToAndBlend(restLeds, bottle.start, bottle.end, lowHue, highHue + 1);
+
+  #ifdef SHINE_FLUID
+    if(curHue == highHue){
+      curHueDir = -1;
+    }
+    if(curHue == lowHue){
+      curHueDir = 1;
+    }
+    curHue += curHueDir;      
+  #endif 
   
   FastLED.show(); // display this frame
 }
 
 void goingUp(){
   for(size_t i = 0; i < nbGlassLeds; i++){
-    ledsHSV[i] = {random8(lowHue, highHue+1), 255};
+    ledsHSV[i] = {getLedHue(lowHue, highHue+1), 255};
   }
 
   for (size_t i = 0; i < nbGlassSegments; i++){
@@ -177,7 +197,7 @@ void startStream(){
   if(curPower/10 < (stream.end - stream.start)){
     LedIndex newEnd = curPower/10 + stream.start;
     randUpToAndBlend(restLeds, stream.start, newEnd, lowHue, highHue + 1);
-    restLeds[newEnd].setHSV(random8(lowHue, highHue + 1), 255, (curPower%10)*255/9);
+    restLeds[newEnd].setHSV(getLedHue(lowHue, highHue + 1), 255, (curPower%10)*255/9);
     for(size_t i = newEnd+1; i < stream.end; i++){
       restLeds[i].setRGB(0,0,0);
     }
@@ -196,7 +216,7 @@ void stopStream(){
     for(size_t i = stream.start; i < newEnd ; i++){
       restLeds[i].setRGB(0,0,0);
     }
-    restLeds[newEnd].setHSV(random8(lowHue, highHue + 1), 255, (curPower%10)*255/9);
+    restLeds[newEnd].setHSV(getLedHue(lowHue, highHue + 1), 255, (curPower%10)*255/9);
     randUpToAndBlend(restLeds, newEnd + 1, stream.end, lowHue, highHue + 1);
     
   }else{
@@ -209,7 +229,7 @@ void stopStream(){
 
 void goingDown(){
   for(size_t i = 0; i < nbGlassLeds; i++){
-    ledsHSV[i] = {random8(lowHue, highHue+1), 255};
+    ledsHSV[i] = {getLedHue(lowHue, highHue+1), 255};
   }
 
   for (size_t i = 0; i < nbGlassSegments; i++){
@@ -269,14 +289,14 @@ void dropletAnimation(uint8_t stop){
   }
   dropletBrightness += dropletDir;
   for(LedIndex j = droplet.start; j < droplet.end; j++){
-    restLeds[j].setHSV(random8(lowHue, highHue+1), 255, dropletBrightness);
+    restLeds[j].setHSV(getLedHue(lowHue, highHue+1), 255, dropletBrightness);
   }
   juansBlend(restLeds, droplet.start, droplet.end);
 }
 
 void randUpToAndBlend(CRGB* ledsArray, LedIndex start, LedIndex end, uint8_t hueFrom, uint8_t hueTo){
   for(size_t i = start; i < end; i++){
-    ledsArray[i].setHSV(random8(hueFrom, hueTo), 255, 255);
+    ledsArray[i].setHSV(getLedHue(hueFrom, hueTo), 255, 255);
   }
   juansBlend(ledsArray, start, end);
 }
@@ -297,6 +317,18 @@ void juansBlend(CRGB* ledsArray, LedIndex start, LedIndex end){
     prev = cur;
     cur = next;
   }
+}
+
+uint8_t getLedHue(uint8_t hueFrom, uint8_t hueTo){
+  #ifdef RANDOM_FLUID
+    return random8(hueFrom, hueTo);
+  #endif 
+  #ifdef SHINE_FLUID
+    return curHue;      
+  #endif 
+  #ifdef STATIC_FLUID
+   return (hueFrom+hueTo)/2;
+  #endif 
 }
 
 MilliMeter getWaterAmount(){
