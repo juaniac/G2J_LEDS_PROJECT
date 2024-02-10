@@ -181,7 +181,7 @@ void goingUp(){
   }
   juansBlend(glassLeds, glassSegment[0].start, glassSegment[nbGlassSegments-1].end);
   waterHeight += getWaterAmount();
-  if(CMtoMM(267) < waterHeight + maxWaveHeight){
+  if(CMtoMM(267) < (waterHeight - maxWaveHeight)){
     cur_state = STOP_WATERING;
   }
 }
@@ -268,10 +268,13 @@ void goingDown(){
   }
   juansBlend(glassLeds, glassSegment[0].start, glassSegment[nbGlassSegments-1].end);
   
-  waterHeight -= getWaterAmount();
+  waterHeight = (waterHeight < getWaterAmount()) ? 0 : (waterHeight - getWaterAmount());
 
-  if(waterHeight < 0){
+  if(waterHeight == 0){
     cur_state = GLASS_STAYS_EMPTY;
+    for(size_t i = 0; i < nbGlassLeds; i++){
+      glassLeds[i].setRGB(0,0,0);
+    }
   }
 }
 
