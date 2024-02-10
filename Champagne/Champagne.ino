@@ -9,8 +9,8 @@
 //{"id":5,"start":220,"stop":233,"grp":1,"spc":0,"of":0,"on":true,"frz":false,"bri":255,"cct":127,"set":0,"n":"Gouttes","col":[[255,170,0],[0,0,0],[0,0,0]],"fx":0,"sx":128,"ix":128,"pal":0,"c1":128,"c2":128,"c3":16,"sel":true,"rev":false,"mi":false,"o1":false,"o2":false,"o3":false,"si":0,"m12":0}]}
 
 //#define RANDOM_FLUID 
-#define SHINE_FLUID
-//#define STATIC_FLUID 
+//#define SHINE_FLUID
+#define STATIC_FLUID 
 
 #define Glass_LED_PIN     2
 #define Rest_LED_PIN      1
@@ -25,7 +25,7 @@
 CRGB glassLeds[nbGlassLeds];
 CRGB restLeds[nbRestLeds];
 
-typedef uint8_t CentiMeter;
+typedef uint16_t CentiMeter;
 typedef uint16_t MilliMeter;
 typedef uint16_t LedIndex;
 typedef uint16_t MilliSecond;
@@ -59,7 +59,7 @@ HSV ledsHSV[nbGlassLeds];
 MilliMeter waterHeight = 0;
 MilliSecond previousWaterUpdateTime;
 MilliMeterPerSecond waterSpeed = 60;
-#define maxWaveHeight 20
+#define maxWaveHeight 30
 
 void setup() {
   delay(3000); // sanity delay
@@ -101,10 +101,6 @@ int curHueDir = 1;
 
 void loop(){
   if(cur_state == START_WATERING){
-    goingUp();
-  }
-  /*
-  if(cur_state == START_WATERING){
     startStream();
   }else if(cur_state == FILLING_GLASS){
     goingUp();
@@ -138,7 +134,7 @@ void loop(){
       curHueDir = 1;
     }
     curHue += curHueDir;      
-  #endif */
+  #endif 
   
   FastLED.show(); // display this frame
 }
