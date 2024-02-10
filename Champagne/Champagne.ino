@@ -61,11 +61,6 @@ MilliSecond previousWaterUpdateTime;
 MilliMeterPerSecond waterSpeed = 60;
 #define maxWaveHeight 20
 
-#ifdef SHINE_FLUID
-uint8_t curHue = lowHue;
-int curHueDir = 1;
-#endif 
-
 void setup() {
   delay(3000); // sanity delay
   FastLED.addLeds<Glass_CHIPSET, Glass_LED_PIN, COLOR_ORDER>(glassLeds, nbGlassLeds).setCorrection( TypicalLEDStrip );
@@ -98,6 +93,11 @@ Anim_states cur_state = START_WATERING;
 
 #define lowHue 27
 #define highHue 34
+
+#ifdef SHINE_FLUID
+uint8_t curHue = lowHue;
+int curHueDir = 1;
+#endif 
 
 void loop(){
   if(cur_state == START_WATERING){
