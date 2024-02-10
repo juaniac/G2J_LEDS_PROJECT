@@ -43,7 +43,7 @@ struct SegmentHeights{
   CentiMeter highHeight;
 };
 #define nbGlassSegments 5
-const Segment glassSegment[]  = {{0, 11, -1}, {11, 28, -1}, {28, 36, -1}, {36, 44, 1}, {44, 66, 1}};
+const Segment glassSegments[]  = {{0, 11, -1}, {11, 28, -1}, {28, 36, -1}, {36, 44, 1}, {44, 66, 1}};
 const SegmentHeights glassSegmentHeights[] = {{227, 267}, {55, 227}, {0, 55}, {0, 55}, {55, 267}};
 
 const Segment droplet = {221, 234, 1};
@@ -108,10 +108,10 @@ void loop(){
     dropletAnimation(0);
   }else if(cur_state == STOP_WATERING){
     stopStream();
-    randUpToAndBlend(glassLeds, glassSegment[0].start, glassSegment[nbGlassSegments-1].end, lowHue, highHue + 1);
+    randUpToAndBlend(glassLeds, glassSegments[0].start, glassSegments[nbGlassSegments-1].end, lowHue, highHue + 1);
     dropletAnimation(1);
   }else if(cur_state == GLASS_STAYS_FULL){
-    randUpToAndBlend(glassLeds, glassSegment[0].start, glassSegment[nbGlassSegments-1].end, lowHue, highHue + 1);
+    randUpToAndBlend(glassLeds, glassSegments[0].start, glassSegments[nbGlassSegments-1].end, lowHue, highHue + 1);
     if(WAIT_TIME_TRANS_MILLIS < millis() - previousWaterUpdateTime){
       cur_state = DRINKING_GLASS;
       previousWaterUpdateTime = millis();
@@ -179,7 +179,7 @@ void goingUp(){
       }
     }
   }
-  juansBlend(glassLeds, glassSegment[0].start, glassSegment[nbGlassSegments-1].end);
+  juansBlend(glassLeds, glassSegments[0].start, glassSegments[nbGlassSegments-1].end);
   waterHeight += getWaterAmount();
   if(CMtoMM(267) < (waterHeight - maxWaveHeight)){
     cur_state = STOP_WATERING;
@@ -266,7 +266,7 @@ void goingDown(){
       }
     }
   }
-  juansBlend(glassLeds, glassSegment[0].start, glassSegment[nbGlassSegments-1].end);
+  juansBlend(glassLeds, glassSegments[0].start, glassSegments[nbGlassSegments-1].end);
   
   waterHeight = (waterHeight < getWaterAmount()) ? 0 : (waterHeight - getWaterAmount());
 
@@ -305,15 +305,15 @@ void randUpToAndBlend(CRGB* ledsArray, LedIndex start, LedIndex end, uint8_t hue
 }
 
 void juansBlend(CRGB* ledsArray, LedIndex start, LedIndex end){
-  uint8_t prev;
-  if(end - start => 1){
+  CRGB prev;
+  if(end - start >= 1){
     prev = ledsArray[start];
   }
-  uint8_t cur;
-  if(end - start => 2){
+  CRGB cur;
+  if(end - start >= 2){
     cur = ledsArray[start + 1];
   }
-  uint8_t next;
+  CRGB next;
   for(size_t i = start + 1; i < (end - 1); i++){
     next = ledsArray[i+1];
     ledsArray[i] = (prev + cur + next)/3;
