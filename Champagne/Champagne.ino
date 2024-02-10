@@ -8,8 +8,8 @@
 //{"id":4,"start":234,"stop":299,"grp":1,"spc":0,"of":0,"on":true,"frz":false,"bri":255,"cct":127,"set":0,"n":"Liquide","col":[[255,160,0],[255,200,0],[0,0,0]],"fx":110,"sx":216,"ix":213,"pal":3,"c1":128,"c2":128,"c3":16,"sel":false,"rev":false,"mi":false,"o1":false,"o2":false,"o3":false,"si":0,"m12":1},
 //{"id":5,"start":220,"stop":233,"grp":1,"spc":0,"of":0,"on":true,"frz":false,"bri":255,"cct":127,"set":0,"n":"Gouttes","col":[[255,170,0],[0,0,0],[0,0,0]],"fx":0,"sx":128,"ix":128,"pal":0,"c1":128,"c2":128,"c3":16,"sel":true,"rev":false,"mi":false,"o1":false,"o2":false,"o3":false,"si":0,"m12":0}]}
 
-#define RANDOM_FLUID 
-//#define SHINE_FLUID
+//#define RANDOM_FLUID 
+#define SHINE_FLUID
 //#define STATIC_FLUID 
 
 #define Glass_LED_PIN     2
@@ -101,6 +101,10 @@ int curHueDir = 1;
 
 void loop(){
   if(cur_state == START_WATERING){
+    goingUp();
+  }
+  /*
+  if(cur_state == START_WATERING){
     startStream();
   }else if(cur_state == FILLING_GLASS){
     goingUp();
@@ -134,7 +138,7 @@ void loop(){
       curHueDir = 1;
     }
     curHue += curHueDir;      
-  #endif 
+  #endif */
   
   FastLED.show(); // display this frame
 }
@@ -209,7 +213,8 @@ void startStream(){
 }
 
 void stopStream(){
-  curPower = (curPower < getWaterAmount()) ? 0 : (curPower - getWaterAmount());
+  MilliMeter waterAmount = getWaterAmount();
+  curPower = (curPower < waterAmount) ? 0 : (curPower - waterAmount);
 
   if(0 < curPower){
     LedIndex newEnd = curPower/10 + stream.start;
@@ -268,7 +273,8 @@ void goingDown(){
   }
   juansBlend(glassLeds, glassSegments[0].start, glassSegments[nbGlassSegments-1].end);
   
-  waterHeight = (waterHeight < getWaterAmount()) ? 0 : (waterHeight - getWaterAmount());
+  MilliMeter waterAmount = getWaterAmount();
+  waterHeight = (waterHeight < waterAmount) ? 0 : (waterHeight - waterAmount);
 
   if(waterHeight == 0){
     cur_state = GLASS_STAYS_EMPTY;
