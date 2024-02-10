@@ -183,9 +183,9 @@ void goingUp(){
       }
     }
   }
-  juansBlend(glassLeds, glassSegments[0].start, glassSegments[nbGlassSegments-1].end);
+  //juansBlend(glassLeds, glassSegments[0].start, glassSegments[nbGlassSegments-1].end);
   waterHeight += getWaterAmount();
-  if(CMtoMM(267) < (waterHeight - maxWaveHeight)){
+  if((CMtoMM(267) + maxWaveHeight) < waterHeight){
     cur_state = STOP_WATERING;
   }
 }
@@ -271,7 +271,7 @@ void goingDown(){
       }
     }
   }
-  juansBlend(glassLeds, glassSegments[0].start, glassSegments[nbGlassSegments-1].end);
+  //juansBlend(glassLeds, glassSegments[0].start, glassSegments[nbGlassSegments-1].end);
   
   MilliMeter waterAmount = getWaterAmount();
   waterHeight = (waterHeight < waterAmount) ? 0 : (waterHeight - waterAmount);
