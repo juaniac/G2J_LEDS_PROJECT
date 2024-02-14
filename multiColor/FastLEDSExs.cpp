@@ -224,6 +224,7 @@ void Fire2012(CRGB* leds, uint16_t startIndex, uint16_t endIndex, uint16_t cooli
     globalHeatLength = endIndex;
   }
 
+  uint8_t* heat = globalHeat;
   heat += startIndex;
 
   // Step 1.  Cool down every cell a little
