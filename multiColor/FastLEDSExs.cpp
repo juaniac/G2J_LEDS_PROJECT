@@ -214,7 +214,7 @@ void juggle(CRGB* leds, uint16_t startIndex, uint16_t endIndex)
 uint8_t* globalHeat = NULL;
 uint16_t globalHeatLength = 0;
 
-void Fire2012(CRGB* leds, uint16_t startIndex, uint16_t endIndex, uint16_t cooling, uint16_t sparking)
+void Fire2012(CRGB* leds, uint16_t startIndex, uint16_t endIndex, uint16_t cooling, uint16_t sparking, bool gReverseDirection)
 {
   leds += startIndex;
   uint16_t NUM_LEDS = endIndex - startIndex;

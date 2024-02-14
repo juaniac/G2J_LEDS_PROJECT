@@ -19,7 +19,7 @@ void setup() {
 
 void loop(){   
   pacifica(leds, 0, 88);
-  pride(leds, 88, NUM_LEDS);
+  Fire2012(leds, 88, NUM_LEDS, 55, 120, false);
 
   FastLED.show();
   FastLED.delay(1000 / UPDATES_PER_SECOND);
