@@ -27,19 +27,20 @@ void setup() {
 void loop(){
   Anim_states next_state = cur_state;   
   if(4000 + previousUpdateTime < millis()){
-    next_state = random8(3, NUMBER_OF_STATES);
+    if(next_state == RED){
+      next_state = GREEN;
+    }else if(next_state == GREEN){
+      next_state = BLUE;
+    }else {
+      uint8_t rand = random8(3, NUMBER_OF_STATES + 5);
+      next_state = ((rand < NUMBER_OF_STATES) ? rand : FIRE);
+    }
     previousUpdateTime = millis();
   }
   if(cur_state == RED){
     fill_solid(leds, NUM_LEDS, 0xFF0000);
-    if(next_state != RED){
-      next_state = GREEN;
-    }
   }else if(cur_state == GREEN){
     fill_solid(leds, NUM_LEDS, 0x00FF00);
-    if(next_state != GREEN){
-      next_state = BLUE;
-    }
   }else if(cur_state == BLUE){
     fill_solid(leds, NUM_LEDS, 0x0000FF);
   }else if(cur_state == PRIDE){
